@@ -9,7 +9,7 @@
 type Lead = { name?: unknown; company?: unknown; contact?: unknown; message?: unknown; website?: unknown; page?: unknown }
 
 const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } })
+  new Response(JSON.stringify(body, null, 2), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } })
 
 const str = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -22,7 +22,7 @@ function contactLine(c: string) {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  const token = process.env.TELEGRAM_BOT_TOKEN, chat = process.env.TELEGRAM_CHAT_ID
+  const token = process.env.TELEGRAM_BOT_TOKEN?.trim(), chat = process.env.TELEGRAM_CHAT_ID?.trim()
   if (!token || !chat) return json({ ok: false, error: 'not_configured' }, 500)
 
   let d: Lead
@@ -59,6 +59,40 @@ export async function POST(request: Request): Promise<Response> {
   return json({ ok: true })
 }
 
-export function GET() {
-  return json({ ok: false, error: 'method_not_allowed' }, 405)
+/**
+ * GET /api/lead — диагностика без отправки сообщений. Откройте https://ВАШ-САЙТ/api/lead в браузере:
+ * покажет, заданы ли переменные, действителен ли токен и видит ли бот чат. Токен в ответ не выводится.
+ */
+export async function GET(): Promise<Response> {
+  const token = process.env.TELEGRAM_BOT_TOKEN?.trim(), chat = process.env.TELEGRAM_CHAT_ID?.trim()
+  const out: Record<string, unknown> = { token_set: !!token, chat_id_set: !!chat }
+  if (!token || !chat) {
+    out.ok = false
+    out.hint = 'Не заданы переменные. Vercel → Project → Settings → Environment Variables: добавьте TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID (галочка Production), затем Deployments → ⋯ → Redeploy.'
+    return json(out, 200)
+  }
+  const api = process.env.TELEGRAM_API_BASE || 'https://api.telegram.org'
+  const call = async (m: string, body?: object) => {
+    try {
+      const r = await fetch(`${api}/bot${token}/${m}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body ?? {}) })
+      return (await r.json()) as { ok: boolean; result?: Record<string, unknown>; description?: string }
+    } catch { return { ok: false, description: 'telegram_unreachable' } }
+  }
+  const me = await call('getMe')
+  if (!me.ok) {
+    out.ok = false; out.bot = me.description
+    out.hint = 'Токен бота неверный. Скопируйте токен заново у @BotFather (без пробелов и кавычек), обновите TELEGRAM_BOT_TOKEN и сделайте Redeploy.'
+    return json(out, 200)
+  }
+  out.bot = '@' + me.result?.username
+  const c = await call('getChat', { chat_id: chat })
+  if (!c.ok) {
+    out.ok = false; out.chat = c.description
+    out.hint = `Бот ${out.bot} не видит чат ${chat}. Откройте ${out.bot} в Telegram и нажмите Start (или напишите /start), проверьте TELEGRAM_CHAT_ID (число, для групп начинается с -100), затем Redeploy.`
+    return json(out, 200)
+  }
+  out.ok = true
+  out.chat = c.result?.title || c.result?.first_name || c.result?.username || 'ok'
+  out.hint = 'Всё настроено — заявки будут приходить в этот чат.'
+  return json(out, 200)
 }

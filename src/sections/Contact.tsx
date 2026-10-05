@@ -20,6 +20,7 @@ const leadText = (f: F) => `Заявка с сайта\nИмя: ${f.name}${f.com
 export default function Contact() {
   const [f, setF] = useState<F>(EMPTY)
   const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const [code, setCode] = useState('') // код причины ошибки — для владельца сайта
   const ok = f.name.trim().length > 1 && f.contact.trim().length > 2 && f.message.trim().length > 5
   const set = (k: keyof F) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value })
 
@@ -33,14 +34,14 @@ export default function Contact() {
         const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 12000)
         const r = await fetch(FORM_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ ...f, page: location.href }), signal: ctrl.signal })
         clearTimeout(t)
-        const j = await r.json().catch(() => null)
-        if (!r.ok || !j?.ok) throw new Error(String(r.status))
+        const j = (await r.json().catch(() => null)) as { ok?: boolean; error?: string; detail?: string } | null
+        if (!r.ok || !j?.ok) throw new Error([j?.error || `http_${r.status}`, j?.detail].filter(Boolean).join(': '))
       } else if (CONTACTS.email.url) {
         const body = `Имя: ${f.name}\nКомпания: ${f.company}\nСвязь: ${f.contact}\n\n${f.message}`
         location.href = `${CONTACTS.email.url}?subject=${encodeURIComponent('Новый проект — ' + f.name)}&body=${encodeURIComponent(body)}`
       } else await new Promise((r) => setTimeout(r, 700))
       setState('sent')
-    } catch { setState('error') }
+    } catch (err) { setCode(err instanceof Error ? (err.name === 'AbortError' ? 'timeout' : err.message) : 'network'); setState('error') }
   }
 
   const field = 'peer w-full border-b border-white/15 bg-transparent pb-3 pt-7 text-[18px] outline-none transition-colors placeholder:text-transparent focus:border-signal sm:text-[20px]'
@@ -86,6 +87,7 @@ export default function Contact() {
                     <ContactLink k="telegram" className="inline-flex h-14 items-center justify-center gap-3 rounded-full bg-signal px-7 text-[15px] font-medium text-void"><Send size={16} />Открыть {CONTACTS.telegram.label}</ContactLink>
                   </div>
                   <button onClick={() => setState('idle')} className="mono mt-6 text-muted hover:text-ink">Вернуться к форме</button>
+                  {code && <p className="mono mt-6 break-words text-[9px] normal-case tracking-normal text-white/25">код: {code}</p>}
                 </div>
               </motion.div>
             ) : (
