@@ -1,0 +1,16 @@
+# зависимости и сборка
+node_modules/
+dist/
+dist-single/
+
+# исходники записи видео для карточек (готовые ролики лежат в src/assets/works)
+raw/
+
+# результаты QA-скриптов
+tools/out/
+
+# системное
+.DS_Store
+*.log
+.env
+.env.*

@@ -1,0 +1,60 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-void: #050506;
+  --color-coal: #0b0b0d;
+  --color-steel: #141418;
+  --color-ink: #f2f2f0;
+  --color-muted: #9a9a9f;
+  --color-dim: #7b7b82;
+  --color-signal: #d4ff5a;
+
+  --font-sans: 'Inter Tight Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/*
+ * Фон, цвет и шрифт страницы — ВНЕ @layer: стили без слоя всегда сильнее слоёв Tailwind.
+ * Иначе любой внешний reset (хостинг, превью, встраивание) перебивает body — тёмный фон и Inter Tight пропадают.
+ */
+html:root { color-scheme: dark; background: var(--color-void); }
+html body { margin: 0; background: var(--color-void); color: var(--color-ink); font: 400 16px/1.5 var(--font-sans); text-rendering: optimizeLegibility; }
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; scroll-padding-top: 80px; }
+  html.lenis, html.lenis body { height: auto; }
+  .lenis.lenis-smooth { scroll-behavior: auto !important; }
+  body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; overflow-x: clip; }
+  ::selection { background: var(--color-signal); color: #050506; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 1.5px solid var(--color-signal); outline-offset: 3px; }
+  img, video, svg { display: block; max-width: 100%; }
+  @media (pointer: fine) { html.has-cursor, html.has-cursor * { cursor: none !important; } }
+}
+
+@layer components {
+  .wrap { width: 100%; max-width: 1440px; margin-inline: auto; padding-inline: clamp(18px, 4vw, 64px); }
+  .mono { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
+  .display { font-weight: 600; letter-spacing: -0.045em; line-height: 0.92; }
+  /* хромовая типографика: холодный металлический градиент */
+  .chrome { background: linear-gradient(180deg, #ffffff 0%, #d9d9de 38%, #7f7f88 62%, #e9e9ee 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .line-mask { display: block; overflow: hidden; padding: 0.16em 0 0.08em; margin: -0.16em 0 -0.08em; }
+  .hair { border-color: rgba(255, 255, 255, 0.08); }
+  .glass { background: rgba(14, 14, 17, 0.55); backdrop-filter: blur(16px) saturate(1.3); -webkit-backdrop-filter: blur(16px) saturate(1.3); border: 1px solid rgba(255, 255, 255, 0.08); }
+  /* «видоискатель»: уголки рамки — фирменный элемент */
+  .frame { position: relative; }
+  .frame::before, .frame::after { content: ''; position: absolute; width: 14px; height: 14px; border-color: rgba(255,255,255,.35); border-style: solid; pointer-events: none; transition: all .5s var(--ease-out-expo); }
+  .frame::before { left: -1px; top: -1px; border-width: 1px 0 0 1px; }
+  .frame::after { right: -1px; bottom: -1px; border-width: 0 1px 1px 0; }
+  .grain { position: fixed; inset: -50%; z-index: 60; pointer-events: none; opacity: .055; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); animation: grain 8s steps(10) infinite; }
+}
+
+@keyframes grain { 0%, 100% { transform: translate(0, 0); } 20% { transform: translate(-3%, 2%); } 40% { transform: translate(2%, -3%); } 60% { transform: translate(-2%, -1%); } 80% { transform: translate(3%, 3%); } }
+@keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .4; transform: scale(.8); } }
+@keyframes drip { from { transform: translateY(-100%); } to { transform: translateY(200%); } }
+@keyframes marquee { to { transform: translateX(-50%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+}
