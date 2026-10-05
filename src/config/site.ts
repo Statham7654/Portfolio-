@@ -38,13 +38,20 @@ export const BRAND = {
 
 /** null — кнопка покажет подсказку «ссылка появится скоро» вместо битой ссылки */
 export const CONTACTS = {
-  telegram: { label: '@your_telegram', url: null as string | null },   // например 'https://t.me/username'
-  instagram: { label: '@your_instagram', url: null as string | null }, // например 'https://instagram.com/username'
-  email: { label: 'hello@yourdomain.com', url: null as string | null }, // например 'mailto:hello@yourdomain.com'
+  telegram: { label: '@statham1l', url: 'https://t.me/statham1l' as string | null },
+  instagram: { label: '@statham_web', url: 'https://instagram.com/statham_web' as string | null },
+  email: { label: 'hello@yourdomain.com', url: null as string | null }, // впишите 'mailto:you@domain.com' — пока null, email на сайте скрыт
 }
 
-/** Куда отправлять форму. null — форма откроет почтовый клиент с готовым письмом (если задан email) или покажет демо-подтверждение. */
-export const FORM_ENDPOINT: string | null = null // например 'https://formspree.io/f/xxxxxx'
+/** Контакты, которые показываются на сайте: email скрыт, пока не задан его url */
+export const CONTACT_KEYS = (['telegram', 'instagram', 'email'] as const).filter((k) => k !== 'email' || CONTACTS.email.url)
+
+/**
+ * Куда отправлять заявку. '/api/lead' — серверная функция (api/lead.ts), которая пересылает заявку в ваш Telegram-чат.
+ * Работает после деплоя на Vercel с переменными TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID (инструкция — README.md).
+ * Если отправить не удалось — форма предложит написать в Telegram напрямую, текст заявки копируется.
+ */
+export const FORM_ENDPOINT: string | null = '/api/lead'
 
 // ───────────────────────── навигация и hero
 export const NAV = [

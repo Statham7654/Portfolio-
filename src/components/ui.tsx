@@ -54,6 +54,13 @@ export function Button({ children, onClick, href, variant = 'primary', size = 'm
 }
 
 /** Соцсети: пока адрес не задан в конфиге — подсказка вместо битой ссылки */
+/** Ссылка на контакт: настоящий <a> (открывается в новой вкладке). Пока url не задан — кнопка с подсказкой. */
+export function ContactLink({ k, className, children }: { k: keyof typeof CONTACTS; className?: string; children: React.ReactNode }) {
+  const c = CONTACTS[k]
+  if (c.url) return <a href={c.url} target={c.url.startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer" className={className}>{children}</a>
+  return <button type="button" onClick={() => openContact(k)} className={className}>{children}</button>
+}
+
 export function openContact(k: keyof typeof CONTACTS) {
   const c = CONTACTS[k]
   if (c.url) window.open(c.url, '_blank', 'noopener')

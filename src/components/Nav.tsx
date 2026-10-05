@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { ArrowRight, AtSign, Camera, Send } from 'lucide-react'
-import { NAV, CONTACTS } from '../config/site'
+import { NAV, CONTACTS, CONTACT_KEYS } from '../config/site'
 import Logo from './Logo'
-import { Button, openContact } from './ui'
+import { Button, ContactLink } from './ui'
 import { lockScroll, scrollToId, EASE } from '../lib/motion'
 
 /** «Обсудить проект» из любого места: прокрутка к форме и фокус на первом поле */
@@ -86,19 +86,19 @@ export default function Nav() {
               })}
             </nav>
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45, duration: 0.6, ease: EASE }} className="wrap mt-auto grid gap-4 pb-[max(24px,env(safe-area-inset-bottom))] pt-8 [@media(max-height:700px)]:gap-3 [@media(max-height:700px)]:pt-5">
-              <div className="grid grid-cols-3 gap-2">
-                {(['telegram', 'instagram', 'email'] as const).map((k) => {
+              <div className={`grid gap-2 ${CONTACT_KEYS.length === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                {CONTACT_KEYS.map((k) => {
                   const Icon = k === 'telegram' ? Send : k === 'instagram' ? Camera : AtSign
                   return (
-                    <button key={k} onClick={() => openContact(k)} className="flex flex-col items-start gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.02] px-3.5 py-3 text-left [@media(max-height:700px)]:flex-row [@media(max-height:700px)]:items-center [@media(max-height:700px)]:gap-2 [@media(max-height:700px)]:px-3 active:border-white/20">
+                    <ContactLink key={k} k={k} className="flex flex-col items-start gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.02] px-3.5 py-3 text-left [@media(max-height:700px)]:flex-row [@media(max-height:700px)]:items-center [@media(max-height:700px)]:gap-2 [@media(max-height:700px)]:px-3 active:border-white/20">
                       <Icon size={16} strokeWidth={1.6} className="shrink-0 text-muted max-[359px]:hidden" />
                       <span className="mono text-[10px] text-ink/80">{k === 'email' ? 'Email' : k}</span>
-                    </button>
+                    </ContactLink>
                   )
                 })}
               </div>
               <Button variant="signal" wrapClass="[&>*]:w-full" onClick={() => { setOpen(false); setTimeout(openBrief, 400) }}>Обсудить проект</Button>
-              <span className="mono text-center text-[10px] text-dim">{CONTACTS.email.label}</span>
+              <span className="mono text-center text-[10px] text-dim">{CONTACTS.telegram.label} · {CONTACTS.instagram.label}</span>
             </motion.div>
           </motion.div>
         )}

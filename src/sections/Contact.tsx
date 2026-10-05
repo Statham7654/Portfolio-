@@ -1,12 +1,17 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Check, Send, AtSign, Camera } from 'lucide-react'
-import { BRAND, CONTACTS, FORM_ENDPOINT } from '../config/site'
-import { Button, SectionHead, openContact } from '../components/ui'
+import { BRAND, CONTACTS, CONTACT_KEYS, FORM_ENDPOINT } from '../config/site'
+import { Button, SectionHead, ContactLink } from '../components/ui'
 import { EASE } from '../lib/motion'
 
-type F = { name: string; company: string; contact: string; message: string }
-const EMPTY: F = { name: '', company: '', contact: '', message: '' }
+type F = { name: string; company: string; contact: string; message: string; website: string }
+const EMPTY: F = { name: '', company: '', contact: '', message: '', website: '' } // website — скрытое поле-ловушка для спам-ботов
+
+const META = { telegram: { name: 'Telegram', Icon: Send }, instagram: { name: 'Instagram', Icon: Camera }, email: { name: 'Email', Icon: AtSign } }
+
+/** Текст заявки — для копирования, если автоматическая отправка не сработала */
+const leadText = (f: F) => `Заявка с сайта\nИмя: ${f.name}${f.company ? `\nКомпания: ${f.company}` : ''}\nСвязь: ${f.contact}\n\n${f.message}`
 
 /**
  * Контакты: форма заявки. Отправка — на FORM_ENDPOINT (если задан в конфиге), иначе открывается письмо
@@ -24,8 +29,12 @@ export default function Contact() {
     setState('sending')
     try {
       if (FORM_ENDPOINT) {
-        const r = await fetch(FORM_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(f) })
-        if (!r.ok) throw new Error(String(r.status))
+        // заявка уходит на сервер (api/lead.ts), он пересылает её в Telegram-чат; токен бота хранится только на сервере
+        const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 12000)
+        const r = await fetch(FORM_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ ...f, page: location.href }), signal: ctrl.signal })
+        clearTimeout(t)
+        const j = await r.json().catch(() => null)
+        if (!r.ok || !j?.ok) throw new Error(String(r.status))
       } else if (CONTACTS.email.url) {
         const body = `Имя: ${f.name}\nКомпания: ${f.company}\nСвязь: ${f.contact}\n\n${f.message}`
         location.href = `${CONTACTS.email.url}?subject=${encodeURIComponent('Новый проект — ' + f.name)}&body=${encodeURIComponent(body)}`
@@ -45,12 +54,12 @@ export default function Contact() {
             <p className="mt-8 max-w-sm text-[16px] leading-relaxed text-muted">Отвечаю в течение дня. Опишите задачу — даже в двух предложениях — и я предложу решение и примерный бюджет.</p>
           </SectionHead>
           <ul className="mt-14 grid gap-1 border-t border-white/[0.08]">
-            {([['telegram', 'Telegram', Send], ['instagram', 'Instagram', Camera], ['email', 'Email', AtSign]] as const).map(([k, name, Icon]) => (
+            {CONTACT_KEYS.map((k) => ({ k, ...META[k] })).map(({ k, name, Icon }) => (
               <li key={k}>
-                <button onClick={() => openContact(k)} className="group flex w-full items-center justify-between border-b border-white/[0.08] py-5 text-left">
+                <ContactLink k={k} className="group flex w-full items-center justify-between border-b border-white/[0.08] py-5 text-left">
                   <span className="flex items-center gap-4"><Icon size={18} className="text-muted transition-colors group-hover:text-signal" /><span className="text-[18px]">{name}</span></span>
                   <span className="mono text-dim transition-colors group-hover:text-ink">{CONTACTS[k].label}</span>
-                </button>
+                </ContactLink>
               </li>
             ))}
           </ul>
@@ -67,8 +76,21 @@ export default function Contact() {
                   <button onClick={() => { setF(EMPTY); setState('idle') }} className="mono mt-8 text-muted hover:text-ink">Отправить ещё одну</button>
                 </div>
               </motion.div>
+            ) : state === 'error' ? (
+              <motion.div key="err" role="alert" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.6, ease: EASE }} className="grid min-h-[460px] place-items-center text-center">
+                <div className="max-w-sm">
+                  <span className="mx-auto grid h-16 w-16 place-items-center rounded-full border border-white/15 text-signal"><Send size={24} /></span>
+                  <h3 className="display mt-8 text-[34px] sm:text-[40px]">Напишите мне в Telegram</h3>
+                  <p className="mt-4 text-[15px] leading-relaxed text-muted">Автоматическая отправка сейчас не сработала. Нажмите кнопку — текст заявки скопируется, останется вставить его в чат.</p>
+                  <div className="mt-8 grid gap-3" onClickCapture={() => { navigator.clipboard?.writeText(leadText(f)).catch(() => {}) }}>
+                    <ContactLink k="telegram" className="inline-flex h-14 items-center justify-center gap-3 rounded-full bg-signal px-7 text-[15px] font-medium text-void"><Send size={16} />Открыть {CONTACTS.telegram.label}</ContactLink>
+                  </div>
+                  <button onClick={() => setState('idle')} className="mono mt-6 text-muted hover:text-ink">Вернуться к форме</button>
+                </div>
+              </motion.div>
             ) : (
               <motion.form key="form" onSubmit={submit} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid gap-8" noValidate>
+                <input value={f.website} onChange={set('website')} tabIndex={-1} autoComplete="off" aria-hidden className="absolute -left-[9999px] h-0 w-0 opacity-0" name="website" />
                 <div className="grid gap-8 sm:grid-cols-2">
                   <label className="relative block"><input value={f.name} onChange={set('name')} placeholder="Имя" autoComplete="name" required className={field} /><span className={lab}>Имя *</span></label>
                   <label className="relative block"><input value={f.company} onChange={set('company')} placeholder="Компания" autoComplete="organization" className={field} /><span className={lab}>Компания</span></label>
@@ -76,7 +98,7 @@ export default function Contact() {
                 <label className="relative block"><input value={f.contact} onChange={set('contact')} placeholder="Telegram / Instagram" required className={field} /><span className={lab}>Telegram / Instagram *</span></label>
                 <label className="relative block"><textarea value={f.message} onChange={set('message')} placeholder="Расскажите о проекте" rows={4} required className={`${field} resize-none`} /><span className={lab}>Расскажите о проекте *</span></label>
                 <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
-                  <p className="mono text-[10px] text-dim">{state === 'error' ? <span className="text-red-400">Не отправилось — напишите в Telegram</span> : '* обязательные поля'}</p>
+                  <p className="mono text-[10px] text-dim">* обязательные поля</p>
                   <Button type="submit" variant="signal" disabled={!ok || state === 'sending'}>{state === 'sending' ? 'Отправляю…' : 'Отправить заявку'}</Button>
                 </div>
               </motion.form>
