@@ -30,7 +30,7 @@ export default function Contact() {
     setState('sending')
     try {
       if (FORM_ENDPOINT) {
-        // заявка уходит на сервер (api/lead.ts), он пересылает её в Telegram-чат; токен бота хранится только на сервере
+        // заявка уходит на сервер (api/lead.js), он пересылает её в Telegram-чат; токен бота хранится только на сервере
         const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 12000)
         const r = await fetch(FORM_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ ...f, page: location.href }), signal: ctrl.signal })
         clearTimeout(t)

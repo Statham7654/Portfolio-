@@ -47,7 +47,7 @@ export const CONTACTS = {
 export const CONTACT_KEYS = (['telegram', 'instagram', 'email'] as const).filter((k) => k !== 'email' || CONTACTS.email.url)
 
 /**
- * Куда отправлять заявку. '/api/lead' — серверная функция (api/lead.ts), которая пересылает заявку в ваш Telegram-чат.
+ * Куда отправлять заявку. '/api/lead' — серверная функция (api/lead.js), которая пересылает заявку в ваш Telegram-чат.
  * Работает после деплоя на Vercel с переменными TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID (инструкция — README.md).
  * Если отправить не удалось — форма предложит написать в Telegram напрямую, текст заявки копируется.
  */

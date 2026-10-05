@@ -5,7 +5,7 @@ React 19 + TypeScript + Vite + Tailwind v4 + motion/react + GSAP ScrollTrigger +
 ## Где что менять
 - **Весь контент** — `src/config/site.ts`: бренд, контакты, навигация, тексты hero, проекты (`WORKS`, `MORE_WORKS`), услуги, процесс, цены, «почему я», CTA.
 - Контакты: `CONTACTS.*.url` = `null` → кнопка показывает подсказку вместо перехода. Впишите реальные ссылки.
-- Форма: `FORM_ENDPOINT = '/api/lead'` → `api/lead.ts` (Vercel-функция) пересылает заявку в Telegram. Нужны env `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (см. README). При ошибке — экран «Напишите мне в Telegram» с копированием текста заявки. Токен никогда не класть в код.
+- Форма: `FORM_ENDPOINT = '/api/lead'` → `api/lead.js` (Vercel-функция) пересылает заявку в Telegram. Нужны env `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (см. README). При ошибке — экран «Напишите мне в Telegram» с копированием текста заявки. Токен никогда не класть в код.
 - Контакты: Telegram @statham1l, Instagram @statham_web. Email скрыт, пока `CONTACTS.email.url = null`.
 - Проекты: `kind: 'real'` — обложка/видео из `src/assets/works/`; `kind: 'concept'` — нарисованная обложка (`ConceptCover.tsx`). Чтобы заменить концепт: положить `name.webp` (+ `name.mp4/.webm` для hover-видео) в `src/assets/works/`, импортировать в `site.ts`, указать `cover`/`video`, `kind: 'real'`, `url`.
 - Кейс открывается по хэшу `#work/<id>`.
